@@ -3,51 +3,41 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stripe Autofill</title>
+  <title>AutoCheckout</title>
   <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
   <div class="container">
-    <h1>Stripe Autofill</h1>
-
-    <div class="theme-toggle">
-      <span class="theme-label">Light Mode</span>
-      <label class="switch">
-        <input type="checkbox" id="themeToggle">
-        <span class="slider"></span>
-      </label>
+    <h2>AutoCheckout</h2>
+    <label for="primaryBin">Primary BIN:</label>
+    <input type="text" id="primaryBin" placeholder="Enter Primary BIN">
+    
+    <label for="secondaryBin">Secondary BIN (Optional):</label>
+    <input type="text" id="secondaryBin" placeholder="Enter Secondary BIN">
+    
+    <label for="generateKey">Generate Key:</label>
+    <input type="text" id="generateKey" placeholder="Enter Generate Key">
+    
+    <label for="clearKey">Clear Key:</label>
+    <input type="text" id="clearKey" placeholder="Enter Clear Key">
+    
+    <label for="retrySettings">Retry Settings:</label>
+    <div>
+      <label for="retryInterval">Interval (ms):</label>
+      <input type="number" id="retryInterval" value="2000">
+      <label for="maxRetries">Max Retries:</label>
+      <input type="number" id="maxRetries" value="5">
     </div>
 
-    <form id="configForm">
-      <div class="form-group">
-        <label for="binInput">Enter BIN <span>(6–16 digits)</span>:</label>
-        <input type="text" id="binInput" placeholder="e.g., 522819" required />
-      </div>
+    <label for="cardDetails">Card Details (Optional):</label>
+    <textarea id="cardDetails" placeholder="Enter card details (one per line)\nFormat: 4069485639589467|11|2032|669"></textarea>
+    
+    <div class="buttons">
+      <button id="saveSettings">Save Settings</button>
+      <button id="resetDefaults">Reset to Defaults</button>
+    </div>
 
-      <div class="form-group">
-        <label for="retryCount">Max Retries:</label>
-        <input type="number" id="retryCount" value="5" required />
-      </div>
-
-      <div class="form-group">
-        <label for="successKeyword">Success Detection Keyword <span>(optional)</span>:</label>
-        <input type="text" id="successKeyword" placeholder="e.g., confirmation" />
-      </div>
-
-      <button type="submit" id="startButton" class="btn">
-        <i class="fas fa-play"></i> Start Autofill
-      </button>
-    </form>
-
-    <button id="downloadLogs" class="btn">
-      <i class="fas fa-download"></i> Download Logs
-    </button>
-
-    <p id="status">Status: Waiting for input...</p>
-
-    <audio id="successSound" src="assets/success.mp3"></audio>
-    <audio id="errorSound" src="assets/error.mp3"></audio>
+    <div id="status"></div>
   </div>
   <script src="popup.js"></script>
 </body>
