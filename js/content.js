@@ -85,44 +85,53 @@
 
     // Function to autofill and submit
     function autofillAndSubmit({ cardNumber, expiryMonth, expiryYear, cvv }, bin) {
-        const emailField = document.querySelector("input[type='email']");
-        const nameField = document.querySelector("input[name='name']");
-        const cardField = document.querySelector("input[name='cardnumber']");
-        const expiryField = document.querySelector("input[name='expirydate']");
-        const cvvField = document.querySelector("input[name='cvv']");
-        const submitButton = document.querySelector("button[type='submit']");
+        const emailField = document.querySelector("input[type='email']") || document.querySelector("input[name='email']");
+        const nameField = document.querySelector("input[name='name']") || document.querySelector("input[placeholder='Full Name']");
+        const cardField = document.querySelector("input[name='cardnumber']") || document.querySelector("input[placeholder='Card Number']");
+        const expiryField = document.querySelector("input[name='expirydate']") || document.querySelector("input[placeholder='MM / YY']");
+        const cvvField = document.querySelector("input[name='cvv']") || document.querySelector("input[placeholder='CVC']");
+        const submitButton = document.querySelector("button[type='submit']") || document.querySelector("button[class*='submit']");
 
-        // Autofill email and name
-        if (emailField) {
+        // Autofill email and name if empty
+        if (emailField && emailField.value.trim() === "") {
             emailField.value = "songindian16@gmail.com";
         }
-        if (nameField) {
+        if (nameField && nameField.value.trim() === "") {
             nameField.value = "—͟͟͞͞𝗣𝗛𝗜𝗟𝗢 𝗔𝗠𝗔𝗥";
         }
 
-        // Autofill card details
-        if (cardField && expiryField && cvvField) {
+        // Autofill card details if empty
+        if (cardField && cardField.value.trim() === "") {
             cardField.value = cardNumber;
+        }
+        if (expiryField && expiryField.value.trim() === "") {
             expiryField.value = `${expiryMonth}/${expiryYear}`;
+        }
+        if (cvvField && cvvField.value.trim() === "") {
             cvvField.value = cvv;
+        }
 
-            statusMessage.textContent = "Form autofilled successfully.";
+        // Check if fields were autofilled
+        if (!cardField || !expiryField || !cvvField) {
+            console.error("Card fields not found. Check field selectors.");
+            statusMessage.textContent = "Card fields not found. Check console.";
+            return;
+        }
 
-            if (submitButton) {
-                submitButton.click();
-                statusMessage.textContent = "Form submitted. Waiting for response...";
-                setTimeout(() => checkSubscriptionStatus(bin), 3000); // Wait 3 seconds and check status
-            } else {
-                statusMessage.textContent = "Submit button not found.";
-            }
+        statusMessage.textContent = "Form autofilled successfully.";
+
+        if (submitButton) {
+            submitButton.click();
+            statusMessage.textContent = "Form submitted. Waiting for response...";
+            setTimeout(() => checkSubscriptionStatus(bin), 3000); // Wait 3 seconds and check status
         } else {
-            statusMessage.textContent = "Card fields not found.";
+            statusMessage.textContent = "Submit button not found.";
         }
     }
 
     // Function to check subscription status
     function checkSubscriptionStatus(bin) {
-        const successIndicator = document.querySelector(".success-message"); // Replace with actual selector
+        const successIndicator = document.querySelector(".success-message"); // Replace with actual success indicator selector
         if (successIndicator) {
             statusMessage.textContent = "Subscription successful!";
             retryCount = maxRetries; // Stop retries
