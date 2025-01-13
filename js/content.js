@@ -3,102 +3,234 @@
     const maxRetries = 10;
     let autoRetryEnabled = false;
 
-    // Create the popup container
-    const popupContainer = document.createElement("div");
-    popupContainer.id = "popup-container";
+    /**
+     * Main initializer function
+     */
+    function initPhiloTool() {
+        createUI();
+    }
 
-    // Create the header
-    const header = document.createElement("div");
-    header.id = "popup-header";
-    header.textContent = "Philo Tool";
+    /**
+     * Creates the user interface with animations
+     */
+    function createUI() {
+        const popupContainer = createPopupContainer();
+        const header = createHeader();
+        const binInput = createBINInput();
+        const autoRetryToggle = createAutoRetryToggle();
+        const retryCountDisplay = createRetryCountDisplay();
+        const statusMessage = createStatusMessage();
+        const buttons = createButtons(binInput, statusMessage, retryCountDisplay);
 
-    // Create the status message
-    const statusMessage = document.createElement("div");
-    statusMessage.id = "popup-status";
-    statusMessage.textContent = "Idle";
+        // Append elements to the container
+        popupContainer.appendChild(header);
+        popupContainer.appendChild(binInput);
+        popupContainer.appendChild(buttons.saveButton);
+        popupContainer.appendChild(autoRetryToggle);
+        popupContainer.appendChild(buttons.startButton);
+        popupContainer.appendChild(buttons.stopButton);
+        popupContainer.appendChild(retryCountDisplay);
+        popupContainer.appendChild(statusMessage);
 
-    // Create BIN/Extrap input
-    const binInput = document.createElement("input");
-    binInput.type = "text";
-    binInput.placeholder = "Enter BIN/Extrap";
+        document.body.appendChild(popupContainer);
+        injectStyles();
+    }
 
-    // Load saved BIN/Extrap on load
-    chrome.storage.local.get(["bin"], (result) => {
-        if (result.bin) {
-            binInput.value = result.bin;
+    /**
+     * Creates the popup container element
+     */
+    function createPopupContainer() {
+        const popupContainer = document.createElement("div");
+        popupContainer.id = "popup-container";
+        popupContainer.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            padding: 15px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #4e54c8, #8f94fb);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            font-family: Arial, sans-serif;
+            color: white;
+            z-index: 100000;
+            animation: slide-in 0.5s ease-out;
+        `;
+        return popupContainer;
+    }
+
+    /**
+     * Creates the header element
+     */
+    function createHeader() {
+        const header = document.createElement("div");
+        header.id = "popup-header";
+        header.textContent = "Philo Tool";
+        header.style.cssText = `
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+        `;
+        return header;
+    }
+
+    /**
+     * Creates the BIN input field
+     */
+    function createBINInput() {
+        const binInput = document.createElement("input");
+        binInput.type = "text";
+        binInput.placeholder = "Enter BIN/Extrap";
+        binInput.style.cssText = `
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border: none;
+            outline: none;
+            font-size: 14px;
+            color: black;
+        `;
+
+        // Load saved BIN on load
+        chrome.storage.local.get(["bin"], (result) => {
+            if (result.bin) {
+                binInput.value = result.bin;
+            }
+        });
+        return binInput;
+    }
+
+    /**
+     * Creates the auto retry toggle
+     */
+    function createAutoRetryToggle() {
+        const autoRetryToggle = document.createElement("div");
+        autoRetryToggle.id = "auto-retry-toggle";
+        autoRetryToggle.style.cssText = `
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        `;
+        const retryCheckbox = document.createElement("input");
+        retryCheckbox.type = "checkbox";
+        retryCheckbox.id = "retry-checkbox";
+        retryCheckbox.addEventListener("change", () => {
+            autoRetryEnabled = retryCheckbox.checked;
+        });
+        const retryLabel = document.createElement("label");
+        retryLabel.textContent = "Enable Auto Retry";
+        retryLabel.setAttribute("for", "retry-checkbox");
+        retryLabel.style.cssText = `
+            margin-left: 5px;
+            font-size: 14px;
+        `;
+        autoRetryToggle.appendChild(retryCheckbox);
+        autoRetryToggle.appendChild(retryLabel);
+
+        return autoRetryToggle;
+    }
+
+    /**
+     * Creates the retry count display
+     */
+    function createRetryCountDisplay() {
+        const retryCountDisplay = document.createElement("div");
+        retryCountDisplay.id = "retry-count-display";
+        retryCountDisplay.textContent = `Retry Count: ${retryCount}`;
+        retryCountDisplay.style.cssText = `
+            text-align: center;
+            margin-bottom: 10px;
+        `;
+        return retryCountDisplay;
+    }
+
+    /**
+     * Creates the status message display
+     */
+    function createStatusMessage() {
+        const statusMessage = document.createElement("div");
+        statusMessage.id = "popup-status";
+        statusMessage.textContent = "Idle";
+        statusMessage.style.cssText = `
+            text-align: center;
+            margin-bottom: 10px;
+        `;
+        return statusMessage;
+    }
+
+    /**
+     * Creates the control buttons
+     */
+    function createButtons(binInput, statusMessage, retryCountDisplay) {
+        const buttons = {};
+
+        // Start button
+        buttons.startButton = document.createElement("button");
+        buttons.startButton.textContent = "Start";
+        buttons.startButton.addEventListener("click", () => {
+            const bin = binInput.value.trim();
+            if (bin) {
+                statusMessage.textContent = "Starting process...";
+                retryCount = 0;
+                retryCountDisplay.textContent = `Retry Count: ${retryCount}`;
+                processWithRetry(bin, statusMessage, retryCountDisplay);
+            } else {
+                statusMessage.textContent = "Please enter BIN/Extrap.";
+            }
+        });
+
+        // Save button
+        buttons.saveButton = document.createElement("button");
+        buttons.saveButton.textContent = "Save";
+        buttons.saveButton.addEventListener("click", () => {
+            const bin = binInput.value.trim();
+            if (bin) {
+                chrome.storage.local.set({ bin }, () => {
+                    statusMessage.textContent = "BIN/Extrap saved.";
+                });
+            } else {
+                statusMessage.textContent = "Please enter BIN/Extrap.";
+            }
+        });
+
+        // Stop button
+        buttons.stopButton = document.createElement("button");
+        buttons.stopButton.textContent = "Stop";
+        buttons.stopButton.addEventListener("click", () => {
+            retryCount = maxRetries; // Stop retry loop
+            statusMessage.textContent = "Process stopped.";
+        });
+
+        return buttons;
+    }
+
+    /**
+     * Handles retry logic for filling the card details
+     */
+    function processWithRetry(bin, statusMessage, retryCountDisplay) {
+        if (retryCount >= maxRetries) {
+            statusMessage.textContent = "Max retries reached.";
+            return;
         }
-    });
 
-    // Create Auto Retry toggle
-    const autoRetryToggle = document.createElement("div");
-    autoRetryToggle.id = "auto-retry-toggle";
-    const retryCheckbox = document.createElement("input");
-    retryCheckbox.type = "checkbox";
-    retryCheckbox.id = "retry-checkbox";
-    retryCheckbox.addEventListener("change", () => {
-        autoRetryEnabled = retryCheckbox.checked;
-    });
-    const retryLabel = document.createElement("label");
-    retryLabel.textContent = "Enable Auto Retry";
-    retryLabel.setAttribute("for", "retry-checkbox");
-    autoRetryToggle.appendChild(retryCheckbox);
-    autoRetryToggle.appendChild(retryLabel);
+        const cardDetails = generateCardDetails(bin);
+        const success = detectIframeAndAutofill(cardDetails);
 
-    // Create Retry Count display
-    const retryCountDisplay = document.createElement("div");
-    retryCountDisplay.id = "retry-count-display";
-    retryCountDisplay.textContent = `Retry Count: ${retryCount}`;
-
-    // Create buttons
-    const startButton = document.createElement("button");
-    startButton.textContent = "Start";
-    startButton.addEventListener("click", () => {
-        const bin = binInput.value.trim();
-        if (bin) {
-            statusMessage.textContent = "Starting process...";
-            retryCount = 0;
+        if (!success && autoRetryEnabled) {
+            retryCount++;
             retryCountDisplay.textContent = `Retry Count: ${retryCount}`;
-            processWithRetry(bin);
-        } else {
-            statusMessage.textContent = "Please enter BIN/Extrap.";
+            setTimeout(() => processWithRetry(bin, statusMessage, retryCountDisplay), 3000);
+        } else if (success) {
+            statusMessage.textContent = "Process completed successfully!";
         }
-    });
+    }
 
-    const saveButton = document.createElement("button");
-    saveButton.textContent = "Save";
-    saveButton.addEventListener("click", () => {
-        const bin = binInput.value.trim();
-        if (bin) {
-            chrome.storage.local.set({ bin }, () => {
-                statusMessage.textContent = "BIN/Extrap saved.";
-            });
-        } else {
-            statusMessage.textContent = "Please enter BIN/Extrap.";
-        }
-    });
-
-    const stopButton = document.createElement("button");
-    stopButton.textContent = "Stop";
-    stopButton.addEventListener("click", () => {
-        retryCount = maxRetries; // Stop retry loop
-        statusMessage.textContent = "Process stopped.";
-    });
-
-    // Add elements to the popup
-    popupContainer.appendChild(header);
-    popupContainer.appendChild(binInput);
-    popupContainer.appendChild(saveButton);
-    popupContainer.appendChild(autoRetryToggle);
-    popupContainer.appendChild(startButton);
-    popupContainer.appendChild(stopButton);
-    popupContainer.appendChild(retryCountDisplay);
-    popupContainer.appendChild(statusMessage);
-
-    // Append the popup to the body
-    document.body.appendChild(popupContainer);
-
-    // Function to generate or parse card details
-    function parseOrGenerateCard(input) {
+    /**
+     * Generates card details using the BIN or extrap data
+     */
+    function generateCardDetails(input) {
         let bin, expiryMonth, expiryYear, cvv, cardNumber;
 
         if (input.includes("|")) {
@@ -107,106 +239,59 @@
             expiryMonth = parts[1];
             expiryYear = parts[2];
             cvv = parts[3];
-            console.log(`Using provided details: BIN=${bin}, Expiry=${expiryMonth}/${expiryYear}, CVV=${cvv}`);
-
-            const randomNumber = bin + Math.floor(Math.random() * Math.pow(10, 15 - bin.length)).toString().padStart(15 - bin.length, '0');
-            const luhnDigit = calculateLuhn(randomNumber);
-            cardNumber = randomNumber + luhnDigit;
-
         } else {
             bin = input;
-            const randomNumber = bin + Math.floor(Math.random() * Math.pow(10, 15 - bin.length)).toString().padStart(15 - bin.length, '0');
-            const luhnDigit = calculateLuhn(randomNumber);
-            cardNumber = randomNumber + luhnDigit;
-
             expiryMonth = String(Math.floor(Math.random() * 12) + 1).padStart(2, "0");
             expiryYear = String(new Date().getFullYear() + Math.floor(Math.random() * 5) + 1).slice(2);
             cvv = String(Math.floor(Math.random() * 900) + 100);
-
-            console.log(`Generated details: Card=${cardNumber}, Expiry=${expiryMonth}/${expiryYear}, CVV=${cvv}`);
         }
 
+        cardNumber = generateLuhn(bin);
         return { cardNumber, expiryMonth, expiryYear, cvv };
     }
 
-    // Function to calculate Luhn checksum
-    function calculateLuhn(cardNumberWithoutCheckDigit) {
+    /**
+     * Generates a Luhn-compliant card number
+     */
+    function generateLuhn(bin) {
+        const incompleteCard = bin + Math.random().toString().slice(2, -1).slice(0, 16 - bin.length);
         let sum = 0;
-        const reverseDigits = cardNumberWithoutCheckDigit.split("").reverse();
 
-        for (let i = 0; i < reverseDigits.length; i++) {
-            let digit = parseInt(reverseDigits[i], 10);
-            if (i % 2 === 0) {
-                digit *= 2;
-                if (digit > 9) digit -= 9;
-            }
+        for (let i = 0; i < incompleteCard.length; i++) {
+            let digit = parseInt(incompleteCard[i]);
+            if (i % 2 === 0) digit *= 2;
+            if (digit > 9) digit -= 9;
             sum += digit;
         }
 
-        return (10 - (sum % 10)) % 10;
+        const checkDigit = (10 - (sum % 10)) % 10;
+        return incompleteCard + checkDigit;
     }
 
-    // Function to autofill and submit card details inside iframe
-    function autofillAndSubmit({ cardNumber, expiryMonth, expiryYear, cvv }) {
-        // Locate the iframe containing the card details
-        const iframe = document.querySelector("iframe[name='stripe-card-frame']"); // Update iframe selector based on your inspection
+    /**
+     * Detects iframe and autofills fields
+     */
+    function detectIframeAndAutofill(cardDetails) {
+        const iframe = document.querySelector("iframe[name='__privateStripeFrame']"); // Replace with actual iframe name
+        if (!iframe) return false;
 
-        if (!iframe) {
-            console.error("Iframe not found. Ensure the iframe selector is correct.");
-            statusMessage.textContent = "Iframe not found.";
-            return;
-        }
+        const iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
 
-        // Access the iframe's document
-        const iframeDocument = iframe.contentWindow.document;
+        const cardField = iframeDocument.querySelector("input[name='cardnumber']");
+        const expiryField = iframeDocument.querySelector("input[name='exp-date']");
+        const cvvField = iframeDocument.querySelector("input[name='cvc']");
 
-        // Locate fields inside the iframe
-        const cardField = iframeDocument.querySelector("input[name='cardnumber']") || 
-                          iframeDocument.querySelector("input[placeholder='Card Number']");
-        const expiryField = iframeDocument.querySelector("input[name='exp-date']") || 
-                            iframeDocument.querySelector("input[placeholder='MM / YY']");
-        const cvvField = iframeDocument.querySelector("input[name='cvc']") || 
-                         iframeDocument.querySelector("input[placeholder='CVC']");
-        const submitButton = iframeDocument.querySelector("button[type='submit']") || 
-                             iframeDocument.querySelector("button[class*='submit']");
+        if (!cardField || !expiryField || !cvvField) return false;
 
-        if (!cardField || !expiryField || !cvvField) {
-            console.error("Card fields not found. Ensure the field selectors are correct.");
-            statusMessage.textContent = "Card fields not found.";
-            return;
-        }
+        cardField.value = cardDetails.cardNumber;
+        expiryField.value = `${cardDetails.expiryMonth}/${cardDetails.expiryYear}`;
+        cvvField.value = cardDetails.cvv;
 
-        // Autofill card details
-        cardField.value = cardNumber;
-        expiryField.value = `${expiryMonth}/${expiryYear}`;
-        cvvField.value = cvv;
+        const submitButton = iframeDocument.querySelector("button[type='submit']");
+        if (submitButton) submitButton.click();
 
-        console.log("Autofilled card details:", { cardNumber, expiryMonth, expiryYear, cvv });
-
-        // Submit the form if the button is found
-        if (submitButton) {
-            console.log("Submitting form...");
-            submitButton.click();
-        } else {
-            console.error("Submit button not found.");
-        }
+        return true;
     }
 
-    // Function to retry process
-    function processWithRetry(bin) {
-        if (retryCount >= maxRetries) {
-            statusMessage.textContent = "Max retries reached.";
-            return;
-        }
-
-        const cardDetails = parseOrGenerateCard(bin);
-        retryCount++;
-        retryCountDisplay.textContent = `Retry Count: ${retryCount}`;
-
-        autofillAndSubmit(cardDetails);
-
-        if (autoRetryEnabled) {
-            setTimeout(() => processWithRetry(bin), 3000);
-        }
-    }
+    initPhiloTool();
 })();
