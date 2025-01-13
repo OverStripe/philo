@@ -1,0 +1,69 @@
+/* Enhanced Popup Container */
+#popup-container {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  width: 220px;
+  background: linear-gradient(145deg, #007bff, #0056b3);
+  color: white;
+  font-family: 'Roboto', sans-serif;
+  border-radius: 15px;
+  padding: 15px;
+  z-index: 10000;
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+  animation: slide-in 0.5s ease-out;
+}
+
+/* Header */
+#popup-header {
+  text-align: center;
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 15px;
+  border-bottom: 1px solid white;
+  padding-bottom: 10px;
+}
+
+/* Buttons */
+#popup-container button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 12px;
+  border: none;
+  background: #ff9800;
+  color: white;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.3s ease-in-out, transform 0.2s ease-in-out;
+}
+
+/* Button Hover Effect */
+#popup-container button:hover {
+  background: #ff5722;
+  transform: translateY(-2px);
+}
+
+/* Status Message */
+#popup-status {
+  margin-top: 15px;
+  font-size: 14px;
+  color: #ffffe0;
+  text-align: center;
+}
+
+/* Animation */
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
