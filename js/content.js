@@ -2,6 +2,7 @@
     let retryCount = 0;
     const maxRetries = 10;
     let autoRetryEnabled = false;
+    let isVisible = true; // Tracks visibility of the popup
 
     /**
      * Main initializer function
@@ -11,11 +12,11 @@
     }
 
     /**
-     * Creates the user interface with animations
+     * Creates the user interface
      */
     function createUI() {
         const popupContainer = createPopupContainer();
-        const header = createHeader();
+        const header = createHeader(popupContainer);
         const binInput = createBINInput();
         const autoRetryToggle = createAutoRetryToggle();
         const retryCountDisplay = createRetryCountDisplay();
@@ -46,32 +47,46 @@
             position: fixed;
             bottom: 20px;
             right: 20px;
-            width: 300px;
-            padding: 15px;
+            width: 200px;
+            padding: 10px;
             border-radius: 10px;
             background: linear-gradient(135deg, #4e54c8, #8f94fb);
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             font-family: Arial, sans-serif;
             color: white;
             z-index: 100000;
-            animation: slide-in 0.5s ease-out;
+            transition: transform 0.3s ease, opacity 0.3s ease;
         `;
         return popupContainer;
     }
 
     /**
-     * Creates the header element
+     * Creates the header with toggle visibility
      */
-    function createHeader() {
+    function createHeader(popupContainer) {
         const header = document.createElement("div");
         header.id = "popup-header";
         header.textContent = "Philo Tool";
         header.style.cssText = `
-            font-size: 20px;
+            font-size: 16px;
             font-weight: bold;
             text-align: center;
             margin-bottom: 10px;
+            cursor: pointer;
         `;
+
+        // Add click event to toggle visibility
+        header.addEventListener("click", () => {
+            isVisible = !isVisible;
+            if (isVisible) {
+                popupContainer.style.transform = "scale(1)";
+                popupContainer.style.opacity = "1";
+            } else {
+                popupContainer.style.transform = "scale(0)";
+                popupContainer.style.opacity = "0";
+            }
+        });
+
         return header;
     }
 
@@ -84,12 +99,12 @@
         binInput.placeholder = "Enter BIN/Extrap";
         binInput.style.cssText = `
             width: 100%;
-            padding: 10px;
+            padding: 5px;
             margin: 5px 0;
             border-radius: 5px;
             border: none;
             outline: none;
-            font-size: 14px;
+            font-size: 12px;
             color: black;
         `;
 
@@ -124,7 +139,7 @@
         retryLabel.setAttribute("for", "retry-checkbox");
         retryLabel.style.cssText = `
             margin-left: 5px;
-            font-size: 14px;
+            font-size: 12px;
         `;
         autoRetryToggle.appendChild(retryCheckbox);
         autoRetryToggle.appendChild(retryLabel);
@@ -141,7 +156,8 @@
         retryCountDisplay.textContent = `Retry Count: ${retryCount}`;
         retryCountDisplay.style.cssText = `
             text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
+            font-size: 12px;
         `;
         return retryCountDisplay;
     }
@@ -156,6 +172,7 @@
         statusMessage.style.cssText = `
             text-align: center;
             margin-bottom: 10px;
+            font-size: 12px;
         `;
         return statusMessage;
     }
@@ -203,7 +220,50 @@
             statusMessage.textContent = "Process stopped.";
         });
 
+        // Button styles
+        [buttons.startButton, buttons.saveButton, buttons.stopButton].forEach((button) => {
+            button.style.cssText = `
+                width: 100%;
+                background: linear-gradient(135deg, #ff6a00, #ee0979);
+                border: none;
+                border-radius: 5px;
+                padding: 5px;
+                margin: 5px 0;
+                color: white;
+                font-size: 12px;
+                font-weight: bold;
+                cursor: pointer;
+                transition: transform 0.2s, background 0.3s ease-in-out;
+            `;
+            button.addEventListener("mouseenter", () => {
+                button.style.transform = "scale(1.05)";
+            });
+            button.addEventListener("mouseleave", () => {
+                button.style.transform = "scale(1)";
+            });
+        });
+
         return buttons;
+    }
+
+    /**
+     * Adds CSS styles for animations and effects
+     */
+    function injectStyles() {
+        const styleSheet = document.createElement("style");
+        styleSheet.innerHTML = `
+            @keyframes slide-in {
+                from {
+                    transform: translateY(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(styleSheet);
     }
 
     /**
@@ -225,72 +285,6 @@
         } else if (success) {
             statusMessage.textContent = "Process completed successfully!";
         }
-    }
-
-    /**
-     * Generates card details using the BIN or extrap data
-     */
-    function generateCardDetails(input) {
-        let bin, expiryMonth, expiryYear, cvv, cardNumber;
-
-        if (input.includes("|")) {
-            const parts = input.split("|");
-            bin = parts[0];
-            expiryMonth = parts[1];
-            expiryYear = parts[2];
-            cvv = parts[3];
-        } else {
-            bin = input;
-            expiryMonth = String(Math.floor(Math.random() * 12) + 1).padStart(2, "0");
-            expiryYear = String(new Date().getFullYear() + Math.floor(Math.random() * 5) + 1).slice(2);
-            cvv = String(Math.floor(Math.random() * 900) + 100);
-        }
-
-        cardNumber = generateLuhn(bin);
-        return { cardNumber, expiryMonth, expiryYear, cvv };
-    }
-
-    /**
-     * Generates a Luhn-compliant card number
-     */
-    function generateLuhn(bin) {
-        const incompleteCard = bin + Math.random().toString().slice(2, -1).slice(0, 16 - bin.length);
-        let sum = 0;
-
-        for (let i = 0; i < incompleteCard.length; i++) {
-            let digit = parseInt(incompleteCard[i]);
-            if (i % 2 === 0) digit *= 2;
-            if (digit > 9) digit -= 9;
-            sum += digit;
-        }
-
-        const checkDigit = (10 - (sum % 10)) % 10;
-        return incompleteCard + checkDigit;
-    }
-
-    /**
-     * Detects iframe and autofills fields
-     */
-    function detectIframeAndAutofill(cardDetails) {
-        const iframe = document.querySelector("iframe[name='__privateStripeFrame']"); // Replace with actual iframe name
-        if (!iframe) return false;
-
-        const iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
-
-        const cardField = iframeDocument.querySelector("input[name='cardnumber']");
-        const expiryField = iframeDocument.querySelector("input[name='exp-date']");
-        const cvvField = iframeDocument.querySelector("input[name='cvc']");
-
-        if (!cardField || !expiryField || !cvvField) return false;
-
-        cardField.value = cardDetails.cardNumber;
-        expiryField.value = `${cardDetails.expiryMonth}/${cardDetails.expiryYear}`;
-        cvvField.value = cardDetails.cvv;
-
-        const submitButton = iframeDocument.querySelector("button[type='submit']");
-        if (submitButton) submitButton.click();
-
-        return true;
     }
 
     initPhiloTool();
