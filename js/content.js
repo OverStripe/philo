@@ -146,16 +146,29 @@
         return (10 - (sum % 10)) % 10;
     }
 
-    // Function to autofill and submit
+    // Function to autofill and submit card details inside iframe
     function autofillAndSubmit({ cardNumber, expiryMonth, expiryYear, cvv }) {
-        const cardField = document.querySelector("input[name='cardnumber']") || 
-                          document.querySelector("input[placeholder='Card Number']");
-        const expiryField = document.querySelector("input[name='exp-date']") || 
-                            document.querySelector("input[placeholder='MM / YY']");
-        const cvvField = document.querySelector("input[name='cvc']") || 
-                         document.querySelector("input[placeholder='CVC']");
-        const submitButton = document.querySelector("button[type='submit']") || 
-                             document.querySelector("button[class*='submit']");
+        // Locate the iframe containing the card details
+        const iframe = document.querySelector("iframe[name='stripe-card-frame']"); // Update iframe selector based on your inspection
+
+        if (!iframe) {
+            console.error("Iframe not found. Ensure the iframe selector is correct.");
+            statusMessage.textContent = "Iframe not found.";
+            return;
+        }
+
+        // Access the iframe's document
+        const iframeDocument = iframe.contentWindow.document;
+
+        // Locate fields inside the iframe
+        const cardField = iframeDocument.querySelector("input[name='cardnumber']") || 
+                          iframeDocument.querySelector("input[placeholder='Card Number']");
+        const expiryField = iframeDocument.querySelector("input[name='exp-date']") || 
+                            iframeDocument.querySelector("input[placeholder='MM / YY']");
+        const cvvField = iframeDocument.querySelector("input[name='cvc']") || 
+                         iframeDocument.querySelector("input[placeholder='CVC']");
+        const submitButton = iframeDocument.querySelector("button[type='submit']") || 
+                             iframeDocument.querySelector("button[class*='submit']");
 
         if (!cardField || !expiryField || !cvvField) {
             console.error("Card fields not found. Ensure the field selectors are correct.");
@@ -163,12 +176,14 @@
             return;
         }
 
+        // Autofill card details
         cardField.value = cardNumber;
         expiryField.value = `${expiryMonth}/${expiryYear}`;
         cvvField.value = cvv;
 
         console.log("Autofilled card details:", { cardNumber, expiryMonth, expiryYear, cvv });
 
+        // Submit the form if the button is found
         if (submitButton) {
             console.log("Submitting form...");
             submitButton.click();
