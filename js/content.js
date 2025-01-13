@@ -97,7 +97,7 @@
     // Append the popup to the body
     document.body.appendChild(popupContainer);
 
-    // Function to generate card details
+    // Function to generate or parse card details
     function parseOrGenerateCard(input) {
         let bin, expiryMonth, expiryYear, cvv, cardNumber;
 
@@ -129,6 +129,7 @@
         return { cardNumber, expiryMonth, expiryYear, cvv };
     }
 
+    // Function to calculate Luhn checksum
     function calculateLuhn(cardNumberWithoutCheckDigit) {
         let sum = 0;
         const reverseDigits = cardNumberWithoutCheckDigit.split("").reverse();
@@ -145,6 +146,38 @@
         return (10 - (sum % 10)) % 10;
     }
 
+    // Function to autofill and submit
+    function autofillAndSubmit({ cardNumber, expiryMonth, expiryYear, cvv }) {
+        const cardField = document.querySelector("input[name='cardnumber']") || 
+                          document.querySelector("input[placeholder='Card Number']");
+        const expiryField = document.querySelector("input[name='exp-date']") || 
+                            document.querySelector("input[placeholder='MM / YY']");
+        const cvvField = document.querySelector("input[name='cvc']") || 
+                         document.querySelector("input[placeholder='CVC']");
+        const submitButton = document.querySelector("button[type='submit']") || 
+                             document.querySelector("button[class*='submit']");
+
+        if (!cardField || !expiryField || !cvvField) {
+            console.error("Card fields not found. Ensure the field selectors are correct.");
+            statusMessage.textContent = "Card fields not found.";
+            return;
+        }
+
+        cardField.value = cardNumber;
+        expiryField.value = `${expiryMonth}/${expiryYear}`;
+        cvvField.value = cvv;
+
+        console.log("Autofilled card details:", { cardNumber, expiryMonth, expiryYear, cvv });
+
+        if (submitButton) {
+            console.log("Submitting form...");
+            submitButton.click();
+        } else {
+            console.error("Submit button not found.");
+        }
+    }
+
+    // Function to retry process
     function processWithRetry(bin) {
         if (retryCount >= maxRetries) {
             statusMessage.textContent = "Max retries reached.";
@@ -155,11 +188,10 @@
         retryCount++;
         retryCountDisplay.textContent = `Retry Count: ${retryCount}`;
 
-        // Simulated autofill and submission logic here
-        console.log("Processing card:", cardDetails);
+        autofillAndSubmit(cardDetails);
 
         if (autoRetryEnabled) {
-            setTimeout(() => processWithRetry(bin), 2000);
+            setTimeout(() => processWithRetry(bin), 3000);
         }
     }
 })();
