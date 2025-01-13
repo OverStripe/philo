@@ -1,6 +1,7 @@
 (function () {
-    let retryCount = 0; // Track the number of retries
-    const maxRetries = 10; // Set a maximum number of retries to prevent infinite loops
+    let retryCount = 0;
+    const maxRetries = 10;
+    let autoRetryEnabled = false;
 
     // Create the popup container
     const popupContainer = document.createElement("div");
@@ -28,6 +29,26 @@
         }
     });
 
+    // Create Auto Retry toggle
+    const autoRetryToggle = document.createElement("div");
+    autoRetryToggle.id = "auto-retry-toggle";
+    const retryCheckbox = document.createElement("input");
+    retryCheckbox.type = "checkbox";
+    retryCheckbox.id = "retry-checkbox";
+    retryCheckbox.addEventListener("change", () => {
+        autoRetryEnabled = retryCheckbox.checked;
+    });
+    const retryLabel = document.createElement("label");
+    retryLabel.textContent = "Enable Auto Retry";
+    retryLabel.setAttribute("for", "retry-checkbox");
+    autoRetryToggle.appendChild(retryCheckbox);
+    autoRetryToggle.appendChild(retryLabel);
+
+    // Create Retry Count display
+    const retryCountDisplay = document.createElement("div");
+    retryCountDisplay.id = "retry-count-display";
+    retryCountDisplay.textContent = `Retry Count: ${retryCount}`;
+
     // Create buttons
     const startButton = document.createElement("button");
     startButton.textContent = "Start";
@@ -36,6 +57,7 @@
         if (bin) {
             statusMessage.textContent = "Starting process...";
             retryCount = 0;
+            retryCountDisplay.textContent = `Retry Count: ${retryCount}`;
             processWithRetry(bin);
         } else {
             statusMessage.textContent = "Please enter BIN/Extrap.";
@@ -66,90 +88,78 @@
     popupContainer.appendChild(header);
     popupContainer.appendChild(binInput);
     popupContainer.appendChild(saveButton);
+    popupContainer.appendChild(autoRetryToggle);
     popupContainer.appendChild(startButton);
     popupContainer.appendChild(stopButton);
+    popupContainer.appendChild(retryCountDisplay);
     popupContainer.appendChild(statusMessage);
 
     // Append the popup to the body
     document.body.appendChild(popupContainer);
 
     // Function to generate card details
-    function generateCard(bin) {
-        const cardNumber = bin + Math.floor(1000000000 + Math.random() * 9000000000).toString();
-        const expiryMonth = String(Math.floor(Math.random() * 12) + 1).padStart(2, "0");
-        const expiryYear = String(new Date().getFullYear() + Math.floor(Math.random() * 5) + 1).slice(2);
-        const cvv = String(Math.floor(Math.random() * 900) + 100);
-        statusMessage.textContent = `Generated Card: ${cardNumber}, ${expiryMonth}/${expiryYear}, CVV: ${cvv}`;
+    function parseOrGenerateCard(input) {
+        let bin, expiryMonth, expiryYear, cvv, cardNumber;
+
+        if (input.includes("|")) {
+            const parts = input.split("|");
+            bin = parts[0];
+            expiryMonth = parts[1];
+            expiryYear = parts[2];
+            cvv = parts[3];
+            console.log(`Using provided details: BIN=${bin}, Expiry=${expiryMonth}/${expiryYear}, CVV=${cvv}`);
+
+            const randomNumber = bin + Math.floor(Math.random() * Math.pow(10, 15 - bin.length)).toString().padStart(15 - bin.length, '0');
+            const luhnDigit = calculateLuhn(randomNumber);
+            cardNumber = randomNumber + luhnDigit;
+
+        } else {
+            bin = input;
+            const randomNumber = bin + Math.floor(Math.random() * Math.pow(10, 15 - bin.length)).toString().padStart(15 - bin.length, '0');
+            const luhnDigit = calculateLuhn(randomNumber);
+            cardNumber = randomNumber + luhnDigit;
+
+            expiryMonth = String(Math.floor(Math.random() * 12) + 1).padStart(2, "0");
+            expiryYear = String(new Date().getFullYear() + Math.floor(Math.random() * 5) + 1).slice(2);
+            cvv = String(Math.floor(Math.random() * 900) + 100);
+
+            console.log(`Generated details: Card=${cardNumber}, Expiry=${expiryMonth}/${expiryYear}, CVV=${cvv}`);
+        }
+
         return { cardNumber, expiryMonth, expiryYear, cvv };
     }
 
-    // Function to autofill and submit
-    function autofillAndSubmit({ cardNumber, expiryMonth, expiryYear, cvv }, bin) {
-        const emailField = document.querySelector("input[type='email']") || document.querySelector("input[name='email']");
-        const nameField = document.querySelector("input[name='name']") || document.querySelector("input[placeholder='Full Name']");
-        const cardField = document.querySelector("input[name='cardnumber']") || document.querySelector("input[placeholder='Card Number']");
-        const expiryField = document.querySelector("input[name='expirydate']") || document.querySelector("input[placeholder='MM / YY']");
-        const cvvField = document.querySelector("input[name='cvv']") || document.querySelector("input[placeholder='CVC']");
-        const submitButton = document.querySelector("button[type='submit']") || document.querySelector("button[class*='submit']");
+    function calculateLuhn(cardNumberWithoutCheckDigit) {
+        let sum = 0;
+        const reverseDigits = cardNumberWithoutCheckDigit.split("").reverse();
 
-        // Autofill email and name if empty
-        if (emailField && emailField.value.trim() === "") {
-            emailField.value = "songindian16@gmail.com";
-        }
-        if (nameField && nameField.value.trim() === "") {
-            nameField.value = "—͟͟͞͞𝗣𝗛𝗜𝗟𝗢 𝗔𝗠𝗔𝗥";
+        for (let i = 0; i < reverseDigits.length; i++) {
+            let digit = parseInt(reverseDigits[i], 10);
+            if (i % 2 === 0) {
+                digit *= 2;
+                if (digit > 9) digit -= 9;
+            }
+            sum += digit;
         }
 
-        // Autofill card details if empty
-        if (cardField && cardField.value.trim() === "") {
-            cardField.value = cardNumber;
-        }
-        if (expiryField && expiryField.value.trim() === "") {
-            expiryField.value = `${expiryMonth}/${expiryYear}`;
-        }
-        if (cvvField && cvvField.value.trim() === "") {
-            cvvField.value = cvv;
-        }
+        return (10 - (sum % 10)) % 10;
+    }
 
-        // Check if fields were autofilled
-        if (!cardField || !expiryField || !cvvField) {
-            console.error("Card fields not found. Check field selectors.");
-            statusMessage.textContent = "Card fields not found. Check console.";
+    function processWithRetry(bin) {
+        if (retryCount >= maxRetries) {
+            statusMessage.textContent = "Max retries reached.";
             return;
         }
 
-        statusMessage.textContent = "Form autofilled successfully.";
+        const cardDetails = parseOrGenerateCard(bin);
+        retryCount++;
+        retryCountDisplay.textContent = `Retry Count: ${retryCount}`;
 
-        if (submitButton) {
-            submitButton.click();
-            statusMessage.textContent = "Form submitted. Waiting for response...";
-            setTimeout(() => checkSubscriptionStatus(bin), 3000); // Wait 3 seconds and check status
-        } else {
-            statusMessage.textContent = "Submit button not found.";
+        // Simulated autofill and submission logic here
+        console.log("Processing card:", cardDetails);
+
+        if (autoRetryEnabled) {
+            setTimeout(() => processWithRetry(bin), 2000);
         }
-    }
-
-    // Function to check subscription status
-    function checkSubscriptionStatus(bin) {
-        const successIndicator = document.querySelector(".success-message"); // Replace with actual success indicator selector
-        if (successIndicator) {
-            statusMessage.textContent = "Subscription successful!";
-            retryCount = maxRetries; // Stop retries
-        } else {
-            if (retryCount < maxRetries) {
-                retryCount++;
-                statusMessage.textContent = `Retrying (${retryCount}/${maxRetries})...`;
-                const newCardDetails = generateCard(bin);
-                autofillAndSubmit(newCardDetails, bin);
-            } else {
-                statusMessage.textContent = "Max retries reached. Process failed.";
-            }
-        }
-    }
-
-    // Function to handle retry process
-    function processWithRetry(bin) {
-        const cardDetails = generateCard(bin);
-        autofillAndSubmit(cardDetails, bin);
     }
 })();
