@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auto Stripe</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Auto Stripe</h1>
+    <p>Enter BIN or Extra Parameter:</p>
+    <input type="text" id="bin-input" placeholder="Enter BIN (e.g., 411111)">
+    <button id="start-button">Start Automation</button>
+    <p class="info">Ensure you're on a Stripe subscription page.</p>
+    <div id="status-box">
+      <h2>Status</h2>
+      <ul id="status-list">
+        <!-- Status updates will be dynamically added here -->
+      </ul>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
